@@ -22,3 +22,6 @@ target
 
 # Github isn't the place to host actual media so for now, we need to exclude the music video stuff
 music_video
+
+#Documentation's lock shouldn't be there either
+*~lock
