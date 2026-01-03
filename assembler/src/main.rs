@@ -23,6 +23,8 @@ fn main() -> Result<(), ()> {
 				}
 			)
 		);
+
+		return Err(());
 	}
 
 	let file_path : &str = &args[1];

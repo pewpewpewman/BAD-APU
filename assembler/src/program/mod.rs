@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::str::FromStr;
+use std::ops::Mul;
 use std::ops::Sub;
 
 #[derive(Default, Debug)]
@@ -911,7 +912,7 @@ impl FromStr for Immediate {
 		let num : i16 = u16::from_str_radix(s, base)
 			.map_err(|e : std::num::ParseIntError| -> String { e.to_string() })?
 			.cast_signed()
-			* multiplier;
+			.mul(multiplier);
 
 		Ok(Immediate(num))
 	}
