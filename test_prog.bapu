@@ -1,0 +1,54 @@
+||This is a comment!
+
+||This is a comment too!
+
+||Here's another!
+
+--DATA--
+	BUFFER-1 <- [5475, 7853, 8742, 9874, 1243]
+
+	BUFFER-2 <- [6743, 9211, 9832, 8943]
+
+	BUFFER-3 <- [4356, 2112, 9439]
+
+--INSTRUCT--
+
+		X1 <- MOVE(43)
+
+		X1 <- MODU(X1, 5)
+
+		X9 <- ADDR(BUFFER-2)
+
+		X3 <- LOAD([X9, -3])
+
+		X3 <- ADD(X3, 45)
+
+		[X9, 3] <- STORE(X3)
+
+		X7 <- MOVE(64)
+
+		X6 <- LOAD([X9, 1])
+
+	LOOP:
+		
+		X7 <- SUB(X7, 1)
+
+		X1 <- ADD(X1, X1) 
+
+		X6 <- ADD(X6, 3)
+
+		END <- BEQ(X7, XZERO)
+
+		LOOP <- B()
+
+	END:
+
+		[X9, 1] <- STORE(X6)
+
+		[XZERO, 0] <- GRAPHIC-STORE(X6)
+
+		X4 <- MOVE(X6)
+
+		X8 <- GRAPHIC-LOAD([X4, -0B110])
+
+		X13 <- RAND()
