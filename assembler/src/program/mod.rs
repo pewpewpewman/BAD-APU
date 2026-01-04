@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::ops::Mul;
-use std::ops::Sub;
 
 #[derive(Default, Debug)]
 pub struct Program {
@@ -461,7 +460,7 @@ impl FromStr for Instruction {
 
 		let instruction : &str = &instruction_and_arg[..open_paren];
 
-		let arg : &str = &instruction_and_arg[open_paren + 1..close_paren].trim();
+		let arg : &str = instruction_and_arg[open_paren + 1..close_paren].trim();
 
 		// Here we go...
 		if let Ok(ai) = instruction.parse::<ArithInstruction>() {
@@ -475,30 +474,26 @@ impl FromStr for Instruction {
 					InstructionParseError::Typical(e)
 				})?;
 
-			let (operand_1,operand_2) : (Register, RegImmed) =
-
-			//Rust fmt just fucking gives up here man 😭
-			match instruction {
-
+			let (operand_1, operand_2) : (Register, RegImmed) = match instruction {
 				ArithInstruction::RAND => {
 					(Register::XZERO, RegImmed::Reg(Register::XZERO))
-				}
-
+				},
 				_ => {
-						arg
-							.split_once(',')
-							.ok_or_else(|| -> InstructionParseError {
-								InstructionParseError::Typical(format!(
-									"Arithmatic arguments require 2, comma seperated arguments!"
-								))
-							})
-							.map(|(o1, o2) : (&str, &str)| -> (&str, &str) { (o1.trim(), o2.trim()) } )
-							.and_then(|(o1, o2) : (&str, &str)| -> Result<(Register, RegImmed), InstructionParseError> {
-								Ok((
-									o1.parse::<Register>()?,
-									o2.parse::<RegImmed>()?
-							))})?
-				}
+					arg
+						.split_once(',')
+						.ok_or_else(|| -> InstructionParseError {
+							InstructionParseError::Typical(
+								"Arithmatic arguments require 2, comma seperated arguments!"
+									.to_owned(),
+							)
+						})
+						.map(|(o1, o2) : (&str, &str)| -> (&str, &str) {
+							(o1.trim(), o2.trim())
+						})
+						.and_then(|(o1, o2) : (&str, &str)| -> Result<(Register, RegImmed), InstructionParseError>  {
+							Ok((o1.parse::<Register>()?, o2.parse::<RegImmed>()?))
+						})?
+				},
 			};
 
 			Ok(Instruction::Arith {
@@ -514,20 +509,21 @@ impl FromStr for Instruction {
 
 			let (operand_1, operand_2) : (Register, Register) = match instruction {
 				BranchInstruction::B => (Register::XZERO, Register::XZERO),
-
 				_ => {
 					arg
 						.split_once(',')
-						.map(|(o1, o2) : (&str, &str)| -> (&str, &str) { (o1.trim(), o2.trim()) } )
-						.ok_or_else(|| -> InstructionParseError {
-							InstructionParseError::Typical(format!(
-								"Conditional branching arguments require 2, comma seperated arguments!"
-							))
+						.map(|(o1, o2) : (&str, &str)| -> (&str, &str) {
+							(o1.trim(), o2.trim())
+						})
+						.ok_or_else(|| {
+							InstructionParseError::Typical(
+								"Conditional branching arguments require 2, comma seperated \
+								 arguments!"
+									.to_owned(),
+							)
 						})
 						.and_then(|(o1, o2) : (&str, &str)| -> Result<(Register, Register), InstructionParseError> {
-									Ok((
-							o1.parse::<Register>()?,
-							o2.parse::<Register>()?))
+							Ok((o1.parse::<Register>()?, o2.parse::<Register>()?))
 						})?
 				},
 			};
@@ -855,21 +851,19 @@ impl FromStr for RegImmed {
 	type Err = String;
 
 	fn from_str(s : &str) -> Result<RegImmed, Self::Err> {
-		Ok(
-			s.parse::<Register>()
-				.map(|r : Register| -> RegImmed { RegImmed::Reg(r) })
-				.or_else(|re : String| -> Result<RegImmed, String> {
-					s.parse::<Immediate>()
-						.map(|i : Immediate| -> RegImmed { RegImmed::Immed(i) })
-						.map_err(|ie : String| -> String {
-							format!(
-								"Failed to parse Register or Immediate because \"{s}\" cannot \
-								 be a register because \"{re}\" and cannot be an immediate \
-								 because \"{ie}\"!"
-							)
-						})
-				})?,
-		)
+		s.parse::<Register>()
+			.map(|r : Register| -> RegImmed { RegImmed::Reg(r) })
+			.or_else(|re : String| -> Result<RegImmed, String> {
+				s.parse::<Immediate>()
+					.map(|i : Immediate| -> RegImmed { RegImmed::Immed(i) })
+					.map_err(|ie : String| -> String {
+						format!(
+							"Failed to parse Register or Immediate because \"{s}\" cannot \
+							 be a register because \"{re}\" and cannot be an immediate \
+							 because \"{ie}\"!"
+						)
+					})
+			})
 	}
 }
 

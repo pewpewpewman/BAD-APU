@@ -12,15 +12,12 @@ fn main() -> Result<(), ()> {
 
 	if args.len() != 2 {
 		eprintln!(
-			"{}",
-			format!(
-				"Too {} args! Correct usage: bad-apu-assembler path/to/file",
-				if args.len() < 2 {
-					"few"
-				} else {
-					"many"
-				}
-			)
+			"Too {} args! Correct usage: bad-apu-assembler path/to/file",
+			if args.len() < 2 {
+				"few"
+			} else {
+				"many"
+			}
 		);
 
 		return Err(());
