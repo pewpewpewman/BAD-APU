@@ -23,7 +23,7 @@ impl FromStr for Program {
 
 		let mut program : Program = Program::default();
 
-		let (mut data, instructions) : (&str, &str) = s
+		let (data, instructions) : (&str, &str) = s
 			.split_once("--INSTRUCT--")
 			.ok_or_else(|| -> String {
 				String::from("Program must contain an \"--INSTRUCT--\" header!")
@@ -204,7 +204,7 @@ impl FromStr for Program {
 														operand_1,
 														operand_2,
 														jump : Immediate(
-															(*program
+															((*program
 																.instruction
 																.label_map
 																.get(&lab)
@@ -214,7 +214,8 @@ impl FromStr for Program {
 																		 label \"{lab}\"!",
 																		s.trim()
 																	)
-																})?) as i16 - instr_num as i16,
+																})?) as i16)
+																.sub(instr_num as i16),
 														),
 													})
 												},
@@ -231,7 +232,6 @@ impl FromStr for Program {
 												Instruction::Alias {
 													instruction,
 													write_back,
-													operand_1,
 													..
 												} => {
 													Ok(Instruction::Alias {
@@ -795,7 +795,6 @@ pub enum Register {
 	X12,
 	X13,
 	X14,
-	X15,
 	#[default]
 	XZERO,
 }
@@ -830,8 +829,7 @@ impl FromStr for Register {
 			"X12" => Ok(Register::X12),
 			"X13" => Ok(Register::X13),
 			"X14" => Ok(Register::X14),
-			"X15" => Ok(Register::X15),
-			"XZERO" | "X16" => Ok(Register::XZERO),
+			"XZERO" | "X15" => Ok(Register::XZERO),
 
 			_ => Err(format!("Invalid reigster \"{s}\"")),
 		}
@@ -919,8 +917,8 @@ impl FromStr for Immediate {
 }
 
 // Theres no real reason for [Register, RegImmed] pairings to have their own
-// type, maybe I'll come back and do that later. Consider this the parsing for
-// that hypothetical type
+// type, maybe I'll come back and do that later. Consider this the parsing
+// (FromStr) for that hypothetical type
 fn parse_memory_argument(arg : &str) -> Result<(Register, RegImmed), String> {
 	arg
 		.strip_prefix('[')

@@ -3,7 +3,6 @@
 
 mod program;
 
-use std::error::Error;
 use std::fs;
 
 use crate::program::Program;
