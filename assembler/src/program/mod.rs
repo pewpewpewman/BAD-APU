@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::ops::Mul;
+use std::ops::Sub;
+use std::ops::BitOr;
 
 #[derive(Default, Debug)]
 pub struct Program {
@@ -28,6 +30,8 @@ impl FromStr for Program {
 				String::from("Program must contain an \"--INSTRUCT--\" header!")
 			})?;
 
+		// TODO: Move parsing code to FromStr implementation of DataSegment and
+		// InstructionSegment
 		data
 			.lines()
 			.filter(|s : &&str| -> bool { is_meaningful(*s) })
@@ -82,7 +86,7 @@ impl FromStr for Program {
 							)
 						})?;
 
-					// To appear borrow rules
+					// To appease borrow rules
 					let content_len : u16 = data_chunk
 						.content
 						.len() as u16;
@@ -163,8 +167,6 @@ impl FromStr for Program {
 					)
 				}
 			})?;
-
-		// Second pass - actually parsing instructions
 		program
 			.instruction
 			.instructions = instructions
@@ -273,6 +275,193 @@ impl FromStr for Program {
 			)?;
 
 		Ok(program)
+	}
+}
+
+impl Program {
+	pub fn data_binary(self: &Program) -> Vec<u8> {
+		self
+			.data
+			.chunks
+			.iter()
+			.map(|dc : &DataChunk| -> &Vec<Immediate> { &dc.content })
+			.flatten()
+			.map(|i : &Immediate| -> [u8; 2] {
+				i.0
+					.to_le_bytes()
+			})
+			.flatten()
+			.collect::<Vec<u8>>()
+	}
+
+	pub fn instruction_binary(self: &Program) -> Vec<u8> {
+		self
+			.instruction
+			.instructions
+			.iter()
+			.map(|i : &Instruction| -> [u8; 4] {
+				// SAFTEY: I mean can *you* think of a reason any of these these are
+				// unsafe?
+				match i {
+					Instruction::Arith {
+						instruction,
+						write_back,
+						operand_1,
+						operand_2,
+					} => {
+						0b00_u32
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(instruction as *const ArithInstruction as *const u8)
+								}) << 2,
+							)
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(write_back as *const Register as *const u8)
+								}) << 7,
+							)
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(operand_1 as *const Register as *const u8)
+								}) << 11,
+							)
+							.bitor(
+								match operand_2 {
+									RegImmed::Reg(r) => {
+										0b1.bitor(
+											(unsafe { *(r as *const Register as *const u8) } as u32)
+												<< 1,
+										)
+									},
+									RegImmed::Immed(i) => 0b0.bitor((i.0 as u32) << 1),
+								} << 15,
+							)
+					},
+
+					Instruction::Branch {
+						instruction,
+						operand_1,
+						operand_2,
+						jump,
+					} => {
+						0b01
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(instruction as *const BranchInstruction as *const u8)
+								}) << 2,
+							)
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(operand_1 as *const Register as *const u8)
+								}) << 11,
+							)
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(operand_2 as *const Register as *const u8)
+								}) << 7,
+							)
+							.bitor((jump.0 as u32) << 16)
+					},
+
+					Instruction::Memory {
+						instruction,
+						wb_and_op,
+						memory_address,
+						offset,
+					} => {
+						0b10
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(instruction as *const MemoryInstruction as *const u8)
+								}) << 2,
+							)
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(wb_and_op as *const Register as *const u8)
+								}) << 7,
+							)
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(memory_address as *const Register as *const u8)
+								}) << 11,
+							)
+							.bitor(
+								match offset {
+									RegImmed::Reg(r) => {
+										0b1.bitor(
+											(unsafe { *(r as *const Register as *const u8) } as u32)
+												<< 1,
+										)
+									},
+									RegImmed::Immed(i) => 0b0.bitor((i.0 as u32) << 1),
+								} << 15,
+							)
+					},
+
+					Instruction::Graphic {
+						instruction,
+						wb_and_op,
+						memory_address,
+						offset,
+					} => {
+						0b10
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(instruction as *const GraphicInstruction as *const u8)
+								}) << 2,
+							)
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(wb_and_op as *const Register as *const u8)
+								}) << 7,
+							)
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(memory_address as *const Register as *const u8)
+								}) << 11,
+							)
+							.bitor(
+								match offset {
+									RegImmed::Reg(r) => {
+										0b1.bitor(
+											(unsafe { *(r as *const Register as *const u8) } as u32)
+												<< 1,
+										)
+									},
+									RegImmed::Immed(i) => 0b0.bitor((i.0 as u32) << 1),
+								} << 15,
+							)
+					},
+
+					Instruction::Alias {
+						instruction: _,
+						write_back,
+						operand_1,
+					} => {
+						0b000000
+							.bitor(
+								Into::<u32>::into(unsafe {
+									*(write_back as *const Register as *const u8)
+								}) << 7,
+							)
+							.bitor((Register::XZERO as u8 as u32) << 11)
+							.bitor(
+								match operand_1 {
+									RegImmed::Reg(r) => {
+										0b1.bitor(
+											(unsafe { *(r as *const Register as *const u8) } as u32)
+												<< 1,
+										)
+									},
+									RegImmed::Immed(i) => 0b0.bitor((i.0 as u32) << 1),
+								} << 15,
+							)
+					},
+				}
+				.to_le_bytes()
+			})
+			.flatten()
+			.collect::<Vec<u8>>()
 	}
 }
 
@@ -878,6 +1067,8 @@ impl FromStr for Immediate {
 	// Parse immediates. Examples include 10, -746, 0B011010001, -0B01011, 0Xab
 	// -0XAB
 	fn from_str(mut s : &str) -> Result<Immediate, Self::Err> {
+		// TODO: Enforce that all letters are uppercase, that is the BAD-APU way!
+
 		let multiplier : i16 = if s.starts_with('-') {
 			s = &s[1..];
 			-1
@@ -889,6 +1080,20 @@ impl FromStr for Immediate {
 			10
 		} else {
 			match &s[0..2] {
+				"0x" => {
+					return Err(format!(
+						"Hexadecimal immediate {s} must begin with an uppercase \"0X\"! \
+						 That is the BAD-APU way!"
+					));
+				},
+
+				"0b" => {
+					return Err(format!(
+						"Binary immediate {s} must begin with an uppercase \"0B\"! That \
+						 is the BAD-APU way!"
+					));
+				},
+
 				"0B" => {
 					s = &s[2..];
 					2
