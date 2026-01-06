@@ -302,6 +302,8 @@ impl Program {
 			.map(|i : &Instruction| -> [u8; 4] {
 				// SAFTEY: I mean can *you* think of a reason any of these these are
 				// unsafe?
+				// TODO: Logisim uses BE byte order from images by default, switch to
+				// that
 				match i {
 					Instruction::Arith {
 						instruction,
@@ -404,7 +406,7 @@ impl Program {
 						memory_address,
 						offset,
 					} => {
-						0b10
+						0b11
 							.bitor(
 								Into::<u32>::into(unsafe {
 									*(instruction as *const GraphicInstruction as *const u8)
@@ -1118,6 +1120,7 @@ impl FromStr for Immediate {
 // Theres no real reason for [Register, RegImmed] pairings to have their own
 // type, maybe I'll come back and do that later. Consider this the parsing
 // (FromStr) for that hypothetical type
+// TODO: Allow for [REGISTER], no comma and offset
 fn parse_memory_argument(arg : &str) -> Result<(Register, RegImmed), String> {
 	arg
 		.strip_prefix('[')
