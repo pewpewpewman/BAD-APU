@@ -612,6 +612,8 @@ impl From<String> for InstructionParseError {
 	}
 }
 
+// TODO: NOT instructions needs to accept only one argument and just set the
+// second one to XZERO
 impl FromStr for Instruction {
 	type Err = InstructionParseError;
 

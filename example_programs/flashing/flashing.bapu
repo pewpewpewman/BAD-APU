@@ -1,0 +1,24 @@
+
+--INSTRUCT--
+
+X1 <- MOVE(0XFFFF)
+
+START:
+
+X0 <- MOVE(192)
+
+LOOP:
+
+	[X0, 0] <- GRAPHIC-STORE(X1)
+	
+	END <- BEQ(X0, XZERO)
+
+	X0 <- SUB(X0, 1)
+
+	LOOP <- B()	
+
+END:
+
+	X1 <- NOT(X1, XZERO)
+	
+	START <- B()

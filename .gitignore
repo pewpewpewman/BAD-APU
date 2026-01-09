@@ -21,7 +21,8 @@ target
 #.idea/
 
 # Github isn't the place to host actual media so for now, we need to exclude the music video stuff
-music_video
+example_programs/music_video/bad_apple.mp4
+example_programs/music_video/bad_apple.mp3
 
 #Documentation's lock shouldn't be there either
 *~lock

@@ -35,7 +35,7 @@
 
 		X1 <- ADD(X1, X1) 
 
-		X6 <- ADD(X6, 3)
+		X5 <- ADD(X6, 3)
 
 		END <- BEQ(X7, XZERO)
 

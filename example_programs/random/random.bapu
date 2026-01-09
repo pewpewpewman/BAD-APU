@@ -1,0 +1,22 @@
+
+--INSTRUCT--
+
+START:
+
+X0 <- MOVE(192)
+
+LOOP:
+	
+	X1 <- RAND()
+
+	[X0, 0] <- GRAPHIC-STORE(X1)
+	
+	END <- BEQ(X0, XZERO)
+
+	X0 <- SUB(X0, 1)
+
+	LOOP <- B()	
+
+END:
+
+	START <- B()
